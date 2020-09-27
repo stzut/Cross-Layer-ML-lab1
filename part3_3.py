@@ -54,17 +54,19 @@ model = SimpleNet().cuda()
 train_count = 0
 def get_output_conv2(self, input, output):
     if train_count == 100:
-        a = output.data[10,3,:,:].reshape([1,14*14]).squeeze().cpu().numpy()
+        a = output.data[10,:,:,:].reshape([1,14*14*16]).squeeze().cpu().numpy()
         print(a)
-        plt.hist(a, bins=50, color='green')
+        plt.clf()
+        plt.hist(a, bins=20, color='green')
         #plt.axis([-0.2, 0.2, 0, 2])
         plt.savefig('part3_3_conv2.png')
 
 def get_output_relu2(self, input, output):
     if train_count == 100:
-        a = output.data[10,3,:,:].reshape([1,14*14]).squeeze().cpu().numpy()
+        a = output.data[10,:,:,:].reshape([1,14*14*16]).squeeze().cpu().numpy()
         print(a)
-        plt.hist(a, bins=50, color='green')
+        plt.clf()
+        plt.hist(a, bins=20, color='green')
         #plt.axis([-0.2, 0.2, 0, 2])
         plt.savefig('part3_3_relu2.png')
 model.features.conv2.register_forward_hook(get_output_conv2)
