@@ -32,39 +32,40 @@ test_loader = torch.utils.data.DataLoader(dataset = test_dataset,
         batch_size = batch_size,
         shuffle = False)
 
-class​ ​SimpleNet​(nn.Module):
-​    def ​__init__​(self, args):
-		super(SimpleNet, self).__init__() 
-		self.features = nn.Sequential()
-		self.features.add_module(​"conv1"​, nn.Conv2d(​1​, ​4​, kernel_size=​3​, stride=​1​, padding=1​ ))
-		self.features.add_module(​"pool1"​, nn.MaxPool2d(kernel_size=​2​, stride=​2)​)
-		self.features.add_module(​"conv2"​, nn.Conv2d(​4​, ​16​, kernel_size=​3​, stride=​1,​ padding=1))
-		self.features.add_module(​"pool2"​, nn.MaxPool2d(kernel_size=​2​, stride=​2)​)
-		self.lin1 = nn.Linear(​7​ * ​7​ * ​16​, 10)
+class SimpleNet(nn.Module):
+    def __init__(self):
+        super(SimpleNet, self).__init__() 
+        self.features = nn.Sequential()
+        self.features.add_module("conv1", nn.Conv2d(1, 4, kernel_size=3, stride=1, padding=1))
+        self.features.add_module("pool1", nn.MaxPool2d(kernel_size=2, stride=2))
+        self.features.add_module("conv2", nn.Conv2d(4, 16, kernel_size=3, stride=1, padding=1))
+        self.features.add_module("pool2", nn.MaxPool2d(kernel_size=2, stride=2))
+        self.lin1 = nn.Linear(7 * 7 * 16, 10)
 
-​    def​ ​forward​(self, x):
-		out = self.features(x)
-		out = out.view(out.size(​0​), ​-1​) 
-		out = self.lin1(out)
-​    	return​ out
+    def forward(self, x):
+        out = self.features(x)
+        out = out.view(out.size(0), -1) 
+        out = self.lin1(out)
+        return out
 
-model = SimpleNet()
-
-
+model = SimpleNet().cuda()
+train_count = 0
 y = []
-def getnorm(weight):
-	y.append(weight.data.norm())
+def getnorm(self, input, output):
+    if train_count % 600 == 0:
+    	y.append(self.weight.data.norm())
 
-
-model.conv2.register_forward_hook(getnorm)
+model.features.conv2.register_backward_hook(getnorm)
 
 criterion = nn.CrossEntropyLoss()
 optimizer = torch.optim.SGD(model.parameters(), lr = learning_rate)
 
 for epoch in range(num_epochs):
     for i, (images, labels) in enumerate(train_loader):
-        images = Variable(images.view(-1, 28 * 28))
-        labels = Variable(labels)
+        #images = Variable(images.view(-1, 28 * 28))
+        train_count += 1
+        images = Variable(images).cuda()
+        labels = Variable(labels).cuda()
 
         # Forward + Backward + Optimize
         optimizer.zero_grad()
@@ -86,12 +87,17 @@ for epoch in range(num_epochs):
 correct = 0
 total = 0
 for images, labels in test_loader:
-    images = Variable(images.view(-1, 28 * 28))
+    #images = Variable(images.view(-1, 28 * 28))
+    images = Variable(images).cuda()
+    labels = Variable(labels).cuda()
     outputs = model(images)
     _, predicted = torch.max(outputs.data, 1)
     total += labels.size(0)
     correct += (predicted == labels).sum()
 
 print('Accuracy of the model on the 10000 test images: % d %%' % (100 * correct / total))
-x_axis = [i for i in len(y)]
-plt.plot()
+x_axis = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+plt.plot(x_axis,y)
+plt.ylabel('Norm of Weight')
+plt.xlabel('Number of Epochs')
+plt.savefig('./part3_2.png')
